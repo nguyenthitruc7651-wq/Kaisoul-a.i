@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KAISOUL A.I. 🤖</title>
+  <meta name="theme-color" content="#0d0f17">
+  <meta name="description" content="KAISOUL A.I. - Trợ lý trí tuệ nhân tạo hiện đại, mạnh mẽ">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Kaisoul%20A.I.%22,%22short_name%22:%22Kaisoul%20AI%22,%22start_url%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22%230d0f17%22,%22theme_color%22:%22%230d0f17%22}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+  
+  <!-- External Libraries (Marked, Highlight.js, FontAwesome) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --bg-main: #0d0f17;
+      --bg-card: #161926;
+      --bg-card-hover: #1f2335;
+      --border-color: #272c40;
+      --text-main: #f0f2f8;
+      --text-muted: #8b93b0;
+      --accent-color: #6366f1;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      --user-msg-bg: #282e47;
+      --ai-msg-bg: #161926;
+      --sidebar-width: 280px;
+      --font-size: 15px;
+    }
+
+    [data-theme="light"] {
+      --bg-main: #f4f6fb;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f0f2f8;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --user-msg-bg: #6366f1;
+      --ai-msg-bg: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg-main); color: var(--text-main); font-size: var(--font-size); height: 100dvh; display: flex; overflow: hidden; }
+
+    /* Logo CSS */
+    .brand-logo { display: inline-flex; align-items: center; justify-content: center; background: var(--accent-gradient); color: #fff; font-weight: 800; font-size: 0.9rem; padding: 4px 8px; border-radius: 8px; letter-spacing: 0.5px; }
+    .brand-logo span { color: #ffd700; margin-left: 2px; }
+
+    /* App Layout */
+    #sidebar { width: var(--sidebar-width); background: var(--bg-card); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 100; }
+    #main-content { flex: 1; display: flex; flex-direction: column; height: 100dvh; position: relative; }
+
+    /* Header */
+    header { height: 60px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; background: var(--bg-card); }
+    .header-left, .header-right { display: flex; align-items: center; gap: 0.75rem; }
+    .status-badge { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 4px 8px; border-radius: 12px; }
+    .status-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; }
+
+    /* Controls */
+    .icon-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1.1rem; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .icon-btn:hover { background: var(--bg-card-hover); color: var(--text-main); }
+    .btn-primary { background: var(--accent-gradient); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+    /* Chat Area */
+    #chat-container { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 1.5rem; scroll-behavior: smooth; }
+    
+    /* Welcome Screen */
+    .welcome-container { max-width: 650px; margin: auto; text-align: center; padding: 2rem 1rem; }
+    .welcome-title { font-size: 2rem; margin-bottom: 0.5rem; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+    .welcome-subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }
+    .features-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 2rem; font-size: 0.9rem; }
+    .feature-tag { background: var(--bg-card); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 16px; color: var(--text-muted); }
+    .suggestions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; width: 100%; }
+    .suggestion-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1rem; text-align: left; cursor: pointer; transition: all 0.2s; }
+    .suggestion-card:hover { border-color: var(--accent-color); transform: translateY(-2px); }
+
+    /* Messages */
+    .msg-group { display: flex; flex-direction: column; gap: 6px; max-width: 850px; width: 100%; margin: 0 auto; }
+    .msg-header { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); padding: 0 4px; }
+    .msg-bubble { padding: 1rem; border-radius: 14px; line-height: 1.6; border: 1px solid var(--border-color); overflow-x: auto; }
+    .msg-user .msg-bubble { background: var(--user-msg-bg); border-color: transparent; }
+    [data-theme="light"] .msg-user .msg-bubble { color: white; }
+    .msg-ai .msg-bubble { background: var(--ai-msg-bg); }
+
+    /* Code Blocks & Markdown */
+    .msg-bubble pre { background: #000; border-radius: 8px; margin: 10px 0; overflow-x: auto; position: relative; }
+    .msg-bubble code { font-family: monospace; font-size: 0.9em; }
+    .code-header { display: flex; justify-content: space-between; align-items: center; background: #1a1d2d; padding: 4px 12px; font-size: 0.75rem; color: #8b93b0; border-bottom: 1px solid #272c40; }
+    .copy-code-btn { background: transparent; border: none; color: #8b93b0; cursor: pointer; font-size: 0.75rem; }
+
+    /* Actions */
+    .msg-actions { display: flex; gap: 8px; margin-top: 4px; }
+    .action-btn { background: transparent; border: none; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+    .action-btn:hover { color: var(--text-main); background: var(--bg-card-hover); }
+
+    /* Input Bar */
+    .input-wrapper { max-width: 850px; width: 100%; margin: 0 auto; padding: 0.75rem 1rem; }
+    .input-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .input-box textarea { background: transparent; border: none; outline: none; color: var(--text-main); font-size: 1rem; resize: none; max-height: 150px; min-height: 24px; line-height: 1.4; }
+    .input-controls { display: flex; justify-content: space-between; align-items: center; }
+    .char-count { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* Sidebar History */
+    .sidebar-header { padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+    .history-list { flex: 1; overflow-y: auto; padding: 0.5rem; display: flex; flex-direction: column; gap: 4px; }
+    .history-item { padding: 0.6rem 0.8rem; border-radius: 8px; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; justify-content: space-between; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+    .history-item:hover, .history-item.active { background: var(--bg-card-hover); color: var(--text-main); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--bg-card); border: 1px solid var(--border-color); width: 90%; max-width: 500px; border-radius: 16px; max-height: 85vh; overflow-y: auto; padding: 1.5rem; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .setting-group { margin-bottom: 1.2rem; }
+    .setting-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; }
+    .setting-group input, .setting-group select { width: 100%; background: var(--bg-main); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 8px; color: var(--text-main); outline: none; }
+    
+    /* Responsive Mobile */
+    @media (max-width: 768px) {
+      #sidebar { position: fixed; inset: 0 auto 0 0; transform: translateX(-100%); }
+      #sidebar.open { transform: translateX(0); }
+      .sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; display: none; }
+      .sidebar-backdrop.active { display: block; }
+    }
+
+    /* Scroll To Bottom Button */
+    #scroll-bottom-btn { position: absolute; bottom: 80px; right: 20px; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+    /* Warning Banner */
+    .security-warn { background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.75rem; padding: 8px; border-radius: 8px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- Mobile Overlay Backdrop -->
+  <div class="sidebar-backdrop" id="backdrop" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar Lịch sử Chat -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-logo">K <span>✦</span> AI</div>
+      <button class="btn-primary" onclick="createNewChat()" style="padding: 4px 10px; font-size: 0.85rem;">
+        <i class="fa-solid fa-plus"></i> New Chat
+      </button>
+    </div>
+    <div class="history-list" id="history-list"></div>
+  </aside>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <header>
+      <div class="header-left">
+        <button class="icon-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        <div class="brand-logo">K <span>✦</span> AI</div>
+        <strong style="font-size: 0.95rem;">KAISOUL A.I.</strong>
+        <div class="status-badge"><div class="status-dot"></div> Online</div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" onclick="createNewChat()" title="Cuộc trò chuyện mới"><i class="fa-solid fa-pen-to-square"></i></button>
+        <button class="icon-btn" onclick="openSettings()" title="Cài đặt"><i class="fa-solid fa-gear"></i></button>
+      </div>
+    </header>
+
+    <div id="chat-container"></div>
+
+    <button id="scroll-bottom-btn" onclick="scrollToBottom(true)"><i class="fa-solid fa-arrow-down"></i></button>
+
+    <!-- Input Bar -->
+    <div class="input-wrapper">
+      <div class="input-box">
+        <textarea id="user-input" rows="1" placeholder="Hỏi Kaisoul A.I. bất cứ điều gì..." oninput="autoResizeTextarea(this)"></textarea>
+        <div class="input-controls">
+          <span class="char-count" id="char-count">0 / 10000</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="icon-btn" id="stop-btn" onclick="stopGenerating()" style="display: none; color: #ef4444;" title="Dừng">
+              <i class="fa-solid fa-circle-stop"></i>
+            </button>
+            <button class="btn-primary" id="send-btn" onclick="sendMessage()">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-sliders"></i> Cài đặt KAISOUL A.I.</h3>
+        <button class="icon-btn" onclick="closeSettings()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Tab: AI -->
+      <div class="setting-group">
+        <label>Model Name</label>
+        <input type="text" id="cfg-model" placeholder="gpt-4o-mini">
+      </div>
+      <div class="setting-group">
+        <label>Custom API Endpoint (Optional)</label>
+        <input type="text" id="cfg-endpoint" placeholder="https://api.openai.com/v1/chat/completions">
+      </div>
+      <div class="setting-group">
+        <label>Frontend API Key (Optional Override)</label>
+        <input type="password" id="cfg-key" placeholder="Để trống nếu đã dùng .env ở Backend">
+        <div class="security-warn">
+          ⚠️ API key được nhập trên trình duyệt không thể được bảo mật tuyệt đối. Để bảo mật tốt hơn, hãy cấu hình API key trong backend ".env".
+        </div>
+      </div>
+      <div class="setting-group">
+        <label>Temperature (<span id="temp-val">0.7</span>)</label>
+        <input type="range" id="cfg-temp" min="0" max="1" step="0.1" value="0.7" oninput="document.getElementById('temp-val').innerText = this.value">
+      </div>
+
+      <!-- Tab: Giao diện -->
+      <hr style="border:0; border-top:1px solid var(--border-color); margin:1rem 0;">
+      <div class="setting-group">
+        <label>Giao diện (Theme)</label>
+        <select id="cfg-theme" onchange="changeTheme(this.value)">
+          <option value="dark">Dark Mode</option>
+          <option value="light">Light Mode</option>
+        </select>
+      </div>
+
+      <!-- Tab: Chat -->
+      <div class="setting-group">
+        <label>Tự động lưu lịch sử (Auto Save)</label>
+
+        <select id="cfg-autosave">
+          <option value="true">Bật</option>
+          <option value="false">Tắt</option>
+        </select>
+      </div>
+      
+      <div style="display: flex; gap: 8px; margin-top: 1.5rem;">
+        <button class="btn-primary" style="flex: 1; justify-content: center;" onclick="saveSettings()">Lưu Cài Đặt</button>
+        <button class="icon-btn" style="border:1px solid #ef4444; color:#ef4444;" onclick="clearAllHistory()" title="Xóa tất cả lịch sử"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State Management
+    let conversations = JSON.parse(localStorage.getItem('kaisoul_chats') || '[]');
+    let activeChatId = null;
+    let abortController = null;
+
+    // Toast Notification System
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:20px;font-size:0.85rem;z-index:2000;box-shadow:0 4px 12px rgba(0,0,0,0.3)';
+      toast.innerText = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Auto-resize Textarea & Char Counter
+    function autoResizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = (el.scrollHeight) + 'px';
+      document.getElementById('char-count').innerText = `${el.value.length} / 10000`;
+    }
+
+    // Keyboard Shortcuts (Enter to send, Shift+Enter newline)
+    document.getElementById('user-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Mobile Sidebar Toggle
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('backdrop').classList.toggle('active');
+    }
+
+    // Render Welcome Screen
+    function renderWelcomeScreen() {
+      const chatContainer = document.getElementById('chat-container');
+      chatContainer.innerHTML = `
+        <div class="welcome-container">
+          <div class="brand-logo" style="font-size:1.5rem; padding:8px 16px; margin-bottom:1rem;">K <span>✦</span> AI</div>
+          <h1 class="welcome-title">Xin chào 👋</h1>
+          <p class="welcome-subtitle">Tôi là Kaisoul A.I. Tôi có thể giúp bạn sáng tạo, học tập và lập trình.</p>
+          
+          <div class="features-list">
+            <span class="feature-tag">💡 Giải đáp câu hỏi</span>
+            <span class="feature-tag">💻 Lập trình</span>
+            <span class="feature-tag">📚 Học tập</span>
+            <span class="feature-tag">✍️ Viết nội dung</span>
+            <span class="feature-tag">🧠 Phân tích</span>
+          </div>
+
+          <div class="suggestions-grid">
+            <div class="suggestion-card" onclick="useSuggestion('Viết code cho tôi một trang web HTML đơn giản')">
+              <strong>💻 Viết code cho tôi</strong>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Tạo trang HTML đơn giản</p>
+            </div>
+            <div class="suggestion-card" onclick="useSuggestion('Giải thích bài này: Khái niệm Trí tuệ nhân tạo')">
+              <strong>📚 Giải thích bài này</strong>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Tóm tắt ngắn gọn khái niệm</p>
+            </div>
+            <div class="suggestion-card" onclick="useSuggestion('Lập kế hoạch học tập môn Lập trình trong 7 ngày')">
+              <strong>🗓️ Lập kế hoạch</strong>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Lộ trình chi tiết theo ngày</p>
+            </div>
+            <div class="suggestion-card" onclick="useSuggestion('Hỏi Kaisoul A.I.: Bạn có thể làm được những gì?')">
+              <strong>🔎 Hỏi Kaisoul A.I.</strong>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Khám phá tính năng AI</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function useSuggestion(text) {
+      const input = document.getElementById('user-input');
+      input.value = text;
+      autoResizeTextarea(input);
+      input.focus();
+    }
+
+    // Core Chat Management
+    function createNewChat() {
+      activeChatId = Date.now().toString();
+      const newChat = { id: activeChatId, title: 'Cuộc trò chuyện mới', messages: [] };
+      conversations.unshift(newChat);
+      saveConversations();
+      renderSidebarHistory();
+      renderMessages();
+      if (window.innerWidth <= 768) toggleSidebar();
+    }
+
+    function renderMessages() {
+      const chatContainer = document.getElementById('chat-container');
+      chatContainer.innerHTML = '';
+
+      const currentChat = conversations.find(c => c.id === activeChatId);
+      if (!currentChat || currentChat.messages.length === 0) {
+        renderWelcomeScreen();
+        return;
+      }
+
+      currentChat.messages.forEach((msg, idx) => {
+        appendMessageUI(msg.role, msg.content, msg.timestamp, idx);
+      });
+
+      scrollToBottom();
+    }
+
+    function appendMessageUI(role, content, timestamp, index) {
+      const chatContainer = document.getElementById('chat-container');
+      const isAI = role === 'assistant';
+      const timeStr = timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const msgGroup = document.createElement('div');
+      msgGroup.className = `msg-group ${isAI ? 'msg-ai' : 'msg-user'}`;
+      msgGroup.id = `msg-${index}`;
+
+      const formattedContent = isAI ? marked.parse(content) : escapeHTML(content);
+
+      msgGroup.innerHTML = `
+        <div class="msg-header">
+          <span>${isAI ? '🤖 Kaisoul A.I.' : '👤 Bạn'}</span>
+          <span>${timeStr}</span>
+        </div>
+        <div class="msg-bubble">${formattedContent}</div>
+        <div class="msg-act
